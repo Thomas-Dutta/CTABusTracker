@@ -1,0 +1,228 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Chicago Bus Tracker</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!--<link rel="stylesheet" type="text/css" href="static/style.css"></link>-->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></link>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        #displayzone {
+            margin-top: 15px;
+        }
+        body {
+            padding-top: 10px;
+        }
+        /*#displayPrediction {*/
+            /*font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;*/
+            /*border-collapse: collapse;*/
+            /*width: 100%;*/
+        /*}*/
+
+        /*#displayPrediction td, #displayPrediction th {*/
+            /*border: 1px solid #ddd;*/
+            /*padding: 8px;*/
+        /*}*/
+
+        /*#displayPrediction tr:nth-child(even){background-color: #f2f2f2;}*/
+
+        /*#displayPrediction tr:hover {background-color: #ddd;}*/
+
+        /*.table-header {*/
+            /*padding-top: 12px;*/
+            /*padding-bottom: 12px;*/
+            /*text-align: left;*/
+            /*background-color: #4CAF50;*/
+            /*color: white;*/
+        /*}*/
+    </style>
+
+</head>
+<body>
+
+
+<div class="container">
+    <div class="jumbotron">
+        <h1>Chicago CTA Bus Tracker</h1>
+        <p>This is a real time bus tracker.</p>
+    </div>
+
+    <form>
+        <div class="row">
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="routeSelect">Bus route:</label>
+                    <select id="routeSelect" class="form-control" onchange="showDirection(this.value)">
+                        <option th:each="route : ${routeMap}" th:value="${route.key}" th:text="${route.key + ' ' + route.value}"></option>
+                    </select>
+                </div>
+                <div class="col-sm-4">
+                    <label for="directionSelect">Direction:</label>
+                    <select id="directionSelect" class="form-control" onchange="showStop(this.value)">
+                        <option></option>
+                    </select>
+                </div>
+                <div class="col-sm-4">
+                    <label for="stopSelect">Stop:</label>
+                    <select id="stopSelect" class="form-control" onchange="showPrediction(this.value)">
+                        <option></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </form>
+    <br></br>
+<div>
+    <div class="row">
+        <!--<table id="displayPrediction" style="display:none">-->
+        <table class="table table-striped table-bordered table-hover table-condensed" id="displayPrediction">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+<script>
+    // <![CDATA[
+    function showDirection(route) {
+        var xhttp;
+        if (route == "") {
+//            document.getElementById("xxx1").innerHTML = "eror";
+            return;
+        }
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var jsonObj = JSON.parse(this.responseText);
+                $('#directionSelect')
+                        .find('option')
+                        .remove()
+                        .end()
+                $('#directionSelect')
+                        .append($("<option></option>")
+                                .attr("value","")
+                                .text(""));
+
+                $('#stopSelect')
+                        .find('option')
+                        .remove()
+                        .end()
+                $('#stopSelect')
+                        .append($("<option></option>")
+                                .attr("value","")
+                                .text(""));
+
+                $.each(jsonObj, function(key, value) {
+                    $('#directionSelect')
+                            .append($("<option></option>")
+                                    .attr("value",key)
+                                    .text(value));
+                });
+//                document.getElementById("xxx1").innerHTML = this.responseText;
+            }
+        };
+        xhttp.open("GET", "api/"+route, true);
+        xhttp.send();
+    }
+
+    function showStop(direction) {
+        var xhttp;
+        if (direction == "") {
+//            document.getElementById("xxx2").innerHTML = "error";
+            return;
+        }
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var jsonObj = JSON.parse(this.responseText);
+                $('#stopSelect')
+                        .find('option')
+                        .remove()
+                        .end()
+                $('#stopSelect')
+                        .append($("<option></option>")
+                                .attr("value","")
+                                .text(""));
+                $.each(jsonObj, function(key, value) {
+                    $('#stopSelect')
+                            .append($("<option></option>")
+                                    .attr("value",key)
+                                    .text(value));
+                });
+//                document.getElementById("xxx2").innerHTML = this.responseText;
+            }
+        };
+
+        var a = document.getElementById("routeSelect");
+        var route = a.options[a.selectedIndex].value;
+        xhttp.open("GET", "api/"+route+"/"+direction, true);
+        xhttp.send();
+    }
+
+
+    function showPrediction(stop) {
+        var xhttp;
+        if (stop == "") {
+//            document.getElementById("xxx3").innerHTML = "eror";
+            return;
+        }
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var jsonObj = JSON.parse(this.responseText);
+
+                func = function(data) {
+//                    var elem=document.getElementById("displayPrediction");
+//                    var hide = elem.style.display =="none";
+//                    if (hide) {
+//                        elem.style.display="table";
+//                    }
+                    $('#displayPrediction')
+                            .find('tr')
+                            .remove()
+                            .end()
+                    var tr;
+//                    tr = $('<tr/>').attr("class","table-header")
+                    tr = $('<tr/>')
+                    tr.append("<th>" + "Route" + "</th>");
+                    tr.append("<th>" + "Destination" + "</th>");
+                    tr.append("<th>" + "VehicleID" + "</th>");
+                    tr.append("<th>" + "Arrival time" + "</th>");
+                    tr.append("<th>" + "Est. Arrival(min)" + "</th>");
+                    $("#displayPrediction > thead").append(tr);
+//                    $('#displayPrediction').append(tr);
+
+                    for (var i = 0; i < data.length; i++) {
+                        tr = $('<tr/>');
+                        tr.append("<td>" + data[i].rt + "</td>");
+                        tr.append("<td>" + data[i].des + "</td>");
+                        tr.append("<td>" + data[i].vid + "</td>");
+                        tr.append("<td>" + data[i].prdtm.split(" ")[1] + "</td>");
+                        tr.append("<td>" + data[i].prdctdn + "</td>");
+//                        $('#displayPrediction').append(tr);
+                        $("#displayPrediction > tbody").append(tr);
+                    }
+
+                };
+                func(jsonObj);
+//                document.getElementById("xxx3").innerHTML = this.responseText;
+            }
+        };
+        var a = document.getElementById("routeSelect");
+        var route = a.options[a.selectedIndex].value;
+        var b = document.getElementById("directionSelect");
+        var direction = b.options[b.selectedIndex].value;
+        xhttp.open("GET", "api/"+route+"/"+direction+"/"+stop, true);
+        xhttp.send();
+    }
+
+
+    // ]]>
+</script>
+</body>
+</html>
